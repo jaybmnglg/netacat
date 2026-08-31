@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>netacat</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar" aria-label="Import controls">
+        <div class="topbar-meta">
+          <label class="theme-toggle" title="Toggle dark mode">
+            <input id="themeToggle" type="checkbox">
+            <span aria-hidden="true"></span>
+            <b>Dark</b>
+          </label>
+          <div class="score-strip">
+            <span><strong id="scoreValue">0</strong> correct</span>
+            <span><strong id="answeredValue">0</strong>/<strong id="totalValue">0</strong> answered</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="shuffleButton" type="button" class="btn-subtle" title="Shuffle questions">Shuffle</button>
+          <button id="reviewButton" type="button" class="btn-subtle" title="Toggle review mode">Review</button>
+          <button id="resetButton" type="button" class="btn-subtle" title="Reset answers">Reset</button>
+        </div>
+      </section>
+
+      <section class="importer" id="importer">
+        <form class="import-bar" id="importForm">
+          <div class="input-wrapper">
+            <svg class="link-icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <input id="urlInput" type="url" placeholder="Paste ITExamAnswers URL..." value="https://itexamanswers.net/ccna-2-v7-modules-1-4-switching-concepts-vlans-and-intervlan-routing-test-online.html">
+          </div>
+          <button id="loadUrlButton" type="submit" class="primary">Import</button>
+          <details class="advanced-import">
+            <summary title="Paste raw HTML or copied text">Paste HTML</summary>
+            <div class="advanced-popover">
+              <textarea id="pasteInput" spellcheck="false" placeholder="Paste full page HTML or article text here..."></textarea>
+              <button id="loadPasteButton" type="button">Import Pasted Content</button>
+            </div>
+          </details>
+        </form>
+        <p id="importStatus" class="status"></p>
+      </section>
+
+      <section class="workspace" hidden>
+        <div class="question-nav-strip">
+          <div id="questionList" class="question-list"></div>
+        </div>
+
+        <section class="quiz-panel" aria-live="polite">
+          <div id="questionContainer" class="quiz-body-grid">
+            <div class="quiz-main-column">
+              <div class="question-meta">
+                <span id="questionCounter">Question 0 of 0</span>
+                <span id="typeBadge">Single choice</span>
+              </div>
+              <h2 id="questionText"></h2>
+              <div id="imageStrip" class="image-strip"></div>
+              <div id="matchingPanel" class="matching-panel" hidden></div>
+              <form id="choicesForm" class="choices"></form>
+              <div class="controls">
+                <div class="nav-group">
+                  <button id="prevButton" type="button" class="btn-subtle" title="Previous question (←)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    <span>Back</span>
+                  </button>
+                </div>
+                <div class="action-group">
+                  <button id="holdAnswerButton" type="button" class="hold-peek-btn" title="Hold down (or press H) to temporarily peek at the answer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Hold for Answer</span>
+                  </button>
+                  <button id="nextButton" type="button" class="primary" title="Next question (→)">
+                    <span>Next</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="quiz-side-column">
+              <section id="explanationPanel" class="explanation" hidden>
+                <h3>Explanation</h3>
+                <p id="answerLine"></p>
+                <div id="explanationText"></div>
+              </section>
+
+              <div id="explanationPlaceholder" class="explanation-placeholder">
+                <span class="placeholder-label">Explanation</span>
+              </div>
+            </div>
+          </div>
+        <section id="resultsPanel" class="results-panel" hidden>
+          <div class="results-header">
+            <div class="results-badge" id="resultsBadge">Quiz Completed</div>
+            <h2>Quiz Performance Summary</h2>
+            <p class="results-subtitle" id="resultsSubtitle"></p>
+          </div>
+
+          <div class="analytics-grid">
+            <div class="stat-card primary-stat">
+              <span class="stat-label">Final Score</span>
+              <div class="stat-value" id="finalScoreVal">0 / 0</div>
+              <span class="stat-sub" id="finalPercentVal">0%</span>
+            </div>
+
+            <div class="stat-card">
+              <span class="stat-label">Correct Answers</span>
+              <div class="stat-value text-good" id="correctCountVal">0</div>
+              <span class="stat-sub">Passed</span>
+            </div>
+
+            <div class="stat-card">
+              <span class="stat-label">Incorrect Answers</span>
+              <div class="stat-value text-bad" id="wrongCountVal">0</div>
+              <span class="stat-sub">Needs Review</span>
+            </div>
+          </div>
+
+          <div class="breakdown-section">
+            <h4>Performance Breakdown by Type</h4>
+            <div id="breakdownList" class="breakdown-list"></div>
+          </div>
+
+          <div class="results-actions">
+            <button id="resultsBackBtn" type="button" class="btn-subtle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <span>Back to Last Question</span>
+            </button>
+
+            <button id="resultsReviewBtn" type="button" class="btn-subtle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Review All Questions</span>
+            </button>
+
+            <button id="resultsResetBtn" type="button" class="btn-danger">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <span>Reset Progress</span>
+            </button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <template id="choiceTemplate">
+      <label class="choice">
+        <input name="choice" type="radio">
+        <span></span>
+      </label>
+    </template>
+
+    <div id="imageModal" class="image-modal" hidden>
+      <div class="image-modal-backdrop" id="modalBackdrop"></div>
+      <div class="image-modal-content">
+        <button id="closeImageModal" type="button" class="close-modal-btn" title="Close">&times;</button>
+        <img id="modalImage" src="" alt="Enlarged exhibit">
+      </div>
+    </div>
+    <div id="resetConfirmModal" class="confirm-modal" hidden>
+      <div class="confirm-modal-backdrop" id="resetModalBackdrop"></div>
+      <div class="confirm-modal-box">
+        <div class="confirm-icon danger">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3>Reset Quiz Progress?</h3>
+        <p>Are you sure you want to reset all your answers and performance analytics? This action cannot be undone.</p>
+        <div class="confirm-modal-actions">
+          <button id="cancelResetBtn" type="button" class="btn-subtle">Cancel</button>
+          <button id="confirmResetBtn" type="button" class="btn-danger-solid">Yes, Reset Quiz</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
