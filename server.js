@@ -72,7 +72,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       const payload = await proxyFetch(target);
-      return send(res, payload.ok ? 200 : 502, JSON.stringify(payload), {
+      return send(res, 200, JSON.stringify(payload), {
         "content-type": "application/json; charset=utf-8"
       });
     }

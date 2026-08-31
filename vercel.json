@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/fetch", "destination": "/api/fetch" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ]
+}
