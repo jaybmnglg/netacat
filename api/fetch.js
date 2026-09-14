@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
     if (!url) {
       if (typeof res.status === "function") {
-        return res.status(400).json({ ok: false, error: "Missing url parameter." });
+        return res.status(400).send(JSON.stringify({ ok: false, error: "Missing url parameter." }));
       }
       res.statusCode = 400;
       res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -64,19 +64,19 @@ export default async function handler(req, res) {
 
     const payload = await proxyFetch(url);
     if (typeof res.status === "function") {
-      return res.status(200).json(payload);
+      return res.status(200).send(JSON.stringify(payload));
     }
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     return res.end(JSON.stringify(payload));
   } catch (error) {
+    console.error('Handler error:', error);
     const errorMsg = error.name === "AbortError" ? "Fetch request timed out (8.5s limit)." : (error.message || "Internal server error");
     if (typeof res.status === "function") {
-      return res.status(500).json({ ok: false, error: errorMsg });
+      return res.status(500).send(JSON.stringify({ ok: false, error: errorMsg }));
     }
     res.statusCode = 500;
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     return res.end(JSON.stringify({ ok: false, error: errorMsg }));
   }
 }
-
