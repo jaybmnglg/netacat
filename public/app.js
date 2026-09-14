@@ -262,7 +262,13 @@ async function importFromUrl() {
   setStatus("Fetching page through the local proxy...");
   try {
     const response = await fetch(`/api/fetch?url=${encodeURIComponent(url)}`);
-    const payload = await response.json();
+    const rawText = await response.text();
+    let payload;
+    try {
+      payload = JSON.parse(rawText);
+    } catch {
+      throw new Error(`Proxy error (${response.status}): ${rawText.slice(0, 120) || "Invalid response"}`);
+    }
     if (!payload.ok) {
       const errMsg = payload.error || `HTTP ${payload.status || response.status}`;
       throw new Error(`Fetch failed (${errMsg}). Try pasted HTML/text fallback.`);
@@ -317,8 +323,14 @@ async function maybeMergeAnswerPage(exam, html, baseUrl) {
   try {
     setStatus("Found linked answers page; importing explanations and answer keys...");
     const response = await fetch(`/api/fetch?url=${encodeURIComponent(answerUrl)}`);
-    const payload = await response.json();
-    if (!payload.ok) return;
+    const rawText = await response.text();
+    let payload;
+    try {
+      payload = JSON.parse(rawText);
+    } catch {
+      return;
+    }
+    if (!payload?.ok) return;
     const answerExam = parseExam(payload.html, answerUrl);
     mergeAnswers(exam, answerExam);
   } catch {
