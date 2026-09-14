@@ -8,7 +8,7 @@ async function proxyFetch(url) {
   const timeoutId = setTimeout(() => controller.abort(), 8500);
 
   try {
-    const response = await fetch(target, {
+    const response = await fetch(target.href, {
       headers: {
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "accept-language": "en-US,en;q=0.9",
