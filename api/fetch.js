@@ -29,18 +29,47 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
-    return res.status(204).end();
+    if (typeof res.status === "function") {
+      return res.status(204).end();
+    }
+    res.statusCode = 204;
+    return res.end();
   }
 
-  const url = req.query.url;
+  let url = req.query?.url;
+  if (!url && req.url) {
+    try {
+      const parsed = new URL(req.url, "http://localhost");
+      url = parsed.searchParams.get("url");
+    } catch {}
+  }
+
   if (!url) {
-    return res.status(400).json({ error: "Missing url parameter." });
+    const errorBody = JSON.stringify({ ok: false, error: "Missing url parameter." });
+    if (typeof res.status === "function") {
+      return res.status(400).send(errorBody);
+    }
+    res.statusCode = 400;
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    return res.end(errorBody);
   }
 
   try {
     const payload = await proxyFetch(url);
-    return res.status(200).json(payload);
+    const body = JSON.stringify(payload);
+    if (typeof res.status === "function") {
+      return res.status(200).send(body);
+    }
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    return res.end(body);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    const errorBody = JSON.stringify({ ok: false, error: error.message });
+    if (typeof res.status === "function") {
+      return res.status(500).send(errorBody);
+    }
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    return res.end(errorBody);
   }
 }
