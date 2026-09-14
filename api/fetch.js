@@ -4,79 +4,43 @@ async function proxyFetch(url) {
     throw new Error("Only http and https URLs are supported.");
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8500);
+  const response = await fetch(target, {
+    headers: {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "accept-language": "en-US,en;q=0.9",
+      "cache-control": "no-cache",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36"
+    },
+    redirect: "follow"
+  });
 
-  try {
-    const response = await fetch(target.href, {
-      headers: {
-        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "accept-language": "en-US,en;q=0.9",
-        "cache-control": "no-cache",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36"
-      },
-      redirect: "follow",
-      signal: controller.signal
-    });
-
-    const html = await response.text();
-    return {
-      ok: response.ok,
-      status: response.status,
-      finalUrl: response.url,
-      html
-    };
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  const html = await response.text();
+  return {
+    ok: response.ok,
+    status: response.status,
+    finalUrl: response.url,
+    html
+  };
 }
 
 export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
+  const url = req.query.url;
+  if (!url) {
+    return res.status(400).json({ error: "Missing url parameter." });
+  }
+
   try {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-    if (req.method === "OPTIONS") {
-      if (typeof res.status === "function") {
-        return res.status(204).end();
-      }
-      res.statusCode = 204;
-      return res.end();
-    }
-
-    let url = req.query?.url;
-    if (!url && req.url) {
-      try {
-        const parsed = new URL(req.url, "http://localhost");
-        url = parsed.searchParams.get("url");
-      } catch {}
-    }
-
-    if (!url) {
-      if (typeof res.status === "function") {
-        return res.status(400).send(JSON.stringify({ ok: false, error: "Missing url parameter." }));
-      }
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json; charset=utf-8");
-      return res.end(JSON.stringify({ ok: false, error: "Missing url parameter." }));
-    }
-
     const payload = await proxyFetch(url);
-    if (typeof res.status === "function") {
-      return res.status(200).send(JSON.stringify(payload));
-    }
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    return res.end(JSON.stringify(payload));
+    return res.status(200).json(payload);
   } catch (error) {
-    console.error('Handler error:', error);
-    const errorMsg = error.name === "AbortError" ? "Fetch request timed out (8.5s limit)." : (error.message || "Internal server error");
-    if (typeof res.status === "function") {
-      return res.status(500).send(JSON.stringify({ ok: false, error: errorMsg }));
-    }
-    res.statusCode = 500;
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    return res.end(JSON.stringify({ ok: false, error: errorMsg }));
+    return res.status(500).json({ error: error.message });
   }
 }

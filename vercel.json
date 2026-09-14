@@ -1,8 +1,6 @@
 {
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "outputDirectory": "public"
+  "rewrites": [
+    { "source": "/api/fetch", "destination": "/api/fetch" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ]
 }
