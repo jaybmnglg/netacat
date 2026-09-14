@@ -27,79 +27,60 @@ function goToQuestion(targetIndex) {
   render();
 }
 
-const el = {
-  importForm: document.querySelector("#importForm"),
-  importer: document.querySelector("#importer"),
-  workspace: document.querySelector(".workspace"),
-  urlInput: document.querySelector("#urlInput"),
-  pasteInput: document.querySelector("#pasteInput"),
-  themeToggle: document.querySelector("#themeToggle"),
-  loadUrlButton: document.querySelector("#loadUrlButton"),
-  loadPasteButton: document.querySelector("#loadPasteButton"),
-  importStatus: document.querySelector("#importStatus"),
-  scoreValue: document.querySelector("#scoreValue"),
-  answeredValue: document.querySelector("#answeredValue"),
-  totalValue: document.querySelector("#totalValue"),
-  questionList: document.querySelector("#questionList"),
-  shuffleButton: document.querySelector("#shuffleButton"),
-  reviewButton: document.querySelector("#reviewButton"),
-  resetButton: document.querySelector("#resetButton"),
-  questionCounter: document.querySelector("#questionCounter"),
-  typeBadge: document.querySelector("#typeBadge"),
-  questionText: document.querySelector("#questionText"),
-  imageStrip: document.querySelector("#imageStrip"),
-  matchingPanel: document.querySelector("#matchingPanel"),
-  choicesForm: document.querySelector("#choicesForm"),
-  choiceTemplate: document.querySelector("#choiceTemplate"),
-  prevButton: document.querySelector("#prevButton"),
-  holdAnswerButton: document.querySelector("#holdAnswerButton"),
-  nextButton: document.querySelector("#nextButton"),
-  explanationPanel: document.querySelector("#explanationPanel"),
-  explanationPlaceholder: document.querySelector("#explanationPlaceholder"),
-  answerLine: document.querySelector("#answerLine"),
-  explanationText: document.querySelector("#explanationText"),
-  quizPanel: document.querySelector(".quiz-panel"),
-  questionContainer: document.querySelector("#questionContainer"),
-  resultsPanel: document.querySelector("#resultsPanel"),
-  resultsBadge: document.querySelector("#resultsBadge"),
-  resultsSubtitle: document.querySelector("#resultsSubtitle"),
-  finalScoreVal: document.querySelector("#finalScoreVal"),
-  finalPercentVal: document.querySelector("#finalPercentVal"),
-  correctCountVal: document.querySelector("#correctCountVal"),
-  wrongCountVal: document.querySelector("#wrongCountVal"),
-  breakdownList: document.querySelector("#breakdownList"),
-  resultsBackBtn: document.querySelector("#resultsBackBtn"),
-  resultsReviewBtn: document.querySelector("#resultsReviewBtn"),
-  resultsResetBtn: document.querySelector("#resultsResetBtn"),
-  resetConfirmModal: document.querySelector("#resetConfirmModal"),
-  resetModalBackdrop: document.querySelector("#resetModalBackdrop"),
-  cancelResetBtn: document.querySelector("#cancelResetBtn"),
-  confirmResetBtn: document.querySelector("#confirmResetBtn")
+const selectorMap = {
+  importForm: "#importForm",
+  importer: "#importer",
+  workspace: ".workspace",
+  urlInput: "#urlInput",
+  pasteInput: "#pasteInput",
+  themeToggle: "#themeToggle",
+  loadUrlButton: "#loadUrlButton",
+  loadPasteButton: "#loadPasteButton",
+  importStatus: "#importStatus",
+  scoreValue: "#scoreValue",
+  answeredValue: "#answeredValue",
+  totalValue: "#totalValue",
+  questionList: "#questionList",
+  shuffleButton: "#shuffleButton",
+  reviewButton: "#reviewButton",
+  resetButton: "#resetButton",
+  questionCounter: "#questionCounter",
+  typeBadge: "#typeBadge",
+  questionText: "#questionText",
+  imageStrip: "#imageStrip",
+  matchingPanel: "#matchingPanel",
+  choicesForm: "#choicesForm",
+  choiceTemplate: "#choiceTemplate",
+  prevButton: "#prevButton",
+  holdAnswerButton: "#holdAnswerButton",
+  nextButton: "#nextButton",
+  explanationPanel: "#explanationPanel",
+  explanationPlaceholder: "#explanationPlaceholder",
+  answerLine: "#answerLine",
+  explanationText: "#explanationText",
+  quizPanel: ".quiz-panel",
+  questionContainer: "#questionContainer",
+  resultsPanel: "#resultsPanel",
+  resultsBadge: "#resultsBadge",
+  resultsSubtitle: "#resultsSubtitle",
+  finalScoreVal: "#finalScoreVal",
+  finalPercentVal: "#finalPercentVal",
+  correctCountVal: "#correctCountVal",
+  wrongCountVal: "#wrongCountVal",
+  breakdownList: "#breakdownList",
+  resultsBackBtn: "#resultsBackBtn",
+  resultsReviewBtn: "#resultsReviewBtn",
+  resultsResetBtn: "#resultsResetBtn",
+  resetConfirmModal: "#resetConfirmModal",
+  resetModalBackdrop: "#resetModalBackdrop",
+  cancelResetBtn: "#cancelResetBtn",
+  confirmResetBtn: "#confirmResetBtn"
 };
 
-initTheme();
+const el = typeof document !== "undefined"
+  ? Object.fromEntries(Object.entries(selectorMap).map(([k, s]) => [k, document.querySelector(s)]))
+  : {};
 
-if (el.importForm) {
-  el.importForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    importFromUrl();
-  });
-}
-el.loadUrlButton.addEventListener("click", (e) => {
-  e.preventDefault();
-  importFromUrl();
-});
-el.loadPasteButton.addEventListener("click", importFromPaste);
-el.themeToggle.addEventListener("change", () => {
-  setTheme(el.themeToggle.checked ? "dark" : "light");
-});
-el.shuffleButton.addEventListener("click", () => {
-  shuffleOrder();
-  state.current = 0;
-  state.peeking = false;
-  lastScrolledQuestion = null;
-  render();
-});
 function updateReviewButton() {
   if (!el.reviewButton) return;
   const span = el.reviewButton.querySelector("span");
@@ -112,45 +93,6 @@ function updateReviewButton() {
   el.reviewButton.classList.toggle("active", Boolean(state.reviewMode));
   el.reviewButton.setAttribute("aria-pressed", String(Boolean(state.reviewMode)));
   el.reviewButton.title = state.reviewMode ? "Exit review mode (switch to practice)" : "Toggle review mode";
-}
-
-el.reviewButton.addEventListener("click", () => {
-  state.reviewMode = !state.reviewMode;
-  updateReviewButton();
-  render();
-});
-el.resetButton.addEventListener("click", openResetConfirmModal);
-
-if (el.resultsResetBtn) {
-  el.resultsResetBtn.addEventListener("click", openResetConfirmModal);
-}
-if (el.cancelResetBtn) {
-  el.cancelResetBtn.addEventListener("click", closeResetConfirmModal);
-}
-if (el.resetModalBackdrop) {
-  el.resetModalBackdrop.addEventListener("click", closeResetConfirmModal);
-}
-if (el.confirmResetBtn) {
-  el.confirmResetBtn.addEventListener("click", () => {
-    resetQuizProgress();
-    closeResetConfirmModal();
-  });
-}
-if (el.resultsBackBtn) {
-  el.resultsBackBtn.addEventListener("click", () => {
-    if (state.order.length > 0) {
-      state.showResults = false;
-      goToQuestion(state.order.length - 1);
-    }
-  });
-}
-if (el.resultsReviewBtn) {
-  el.resultsReviewBtn.addEventListener("click", () => {
-    state.showResults = false;
-    state.reviewMode = true;
-    updateReviewButton();
-    goToQuestion(0);
-  });
 }
 
 function openResetConfirmModal() {
@@ -174,16 +116,6 @@ function resetQuizProgress() {
   state.showResults = false;
   goToQuestion(0);
 }
-el.prevButton.addEventListener("click", () => {
-  if (state.current > 0) {
-    goToQuestion(state.current - 1);
-  }
-});
-el.nextButton.addEventListener("click", () => {
-  if (state.current < state.order.length) {
-    goToQuestion(state.current + 1);
-  }
-});
 
 function togglePeeking() {
   const question = currentQuestion();
@@ -204,10 +136,17 @@ function stopPeeking() {
   render();
 }
 
-const modalEl = document.querySelector("#imageModal");
-const modalImg = document.querySelector("#modalImage");
-const closeBtn = document.querySelector("#closeImageModal");
-const backdrop = document.querySelector("#modalBackdrop");
+let modalEl = null;
+let modalImg = null;
+let closeBtn = null;
+let backdrop = null;
+
+if (typeof document !== "undefined") {
+  modalEl = document.querySelector("#imageModal");
+  modalImg = document.querySelector("#modalImage");
+  closeBtn = document.querySelector("#closeImageModal");
+  backdrop = document.querySelector("#modalBackdrop");
+}
 
 function openImageModal(src) {
   if (!modalEl || !modalImg) return;
@@ -219,40 +158,120 @@ function closeImageModal() {
   if (modalEl) modalEl.hidden = true;
 }
 
-if (closeBtn) closeBtn.addEventListener("click", closeImageModal);
-if (backdrop) backdrop.addEventListener("click", closeImageModal);
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  initTheme();
 
-if (el.holdAnswerButton) {
-  el.holdAnswerButton.addEventListener("click", () => {
-    togglePeeking();
+  if (el.importForm) {
+    el.importForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      importFromUrl();
+    });
+  }
+  if (el.loadUrlButton) {
+    el.loadUrlButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      importFromUrl();
+    });
+  }
+  if (el.loadPasteButton) el.loadPasteButton.addEventListener("click", importFromPaste);
+  if (el.themeToggle) {
+    el.themeToggle.addEventListener("change", () => {
+      setTheme(el.themeToggle.checked ? "dark" : "light");
+    });
+  }
+  if (el.shuffleButton) {
+    el.shuffleButton.addEventListener("click", () => {
+      shuffleOrder();
+      state.current = 0;
+      state.peeking = false;
+      lastScrolledQuestion = null;
+      render();
+    });
+  }
+  if (el.reviewButton) {
+    el.reviewButton.addEventListener("click", () => {
+      state.reviewMode = !state.reviewMode;
+      updateReviewButton();
+      render();
+    });
+  }
+  if (el.resetButton) el.resetButton.addEventListener("click", openResetConfirmModal);
+
+  if (el.resultsResetBtn) el.resultsResetBtn.addEventListener("click", openResetConfirmModal);
+  if (el.cancelResetBtn) el.cancelResetBtn.addEventListener("click", closeResetConfirmModal);
+  if (el.resetModalBackdrop) el.resetModalBackdrop.addEventListener("click", closeResetConfirmModal);
+  if (el.confirmResetBtn) {
+    el.confirmResetBtn.addEventListener("click", () => {
+      resetQuizProgress();
+      closeResetConfirmModal();
+    });
+  }
+  if (el.resultsBackBtn) {
+    el.resultsBackBtn.addEventListener("click", () => {
+      if (state.order.length > 0) {
+        state.showResults = false;
+        goToQuestion(state.order.length - 1);
+      }
+    });
+  }
+  if (el.resultsReviewBtn) {
+    el.resultsReviewBtn.addEventListener("click", () => {
+      state.showResults = false;
+      state.reviewMode = true;
+      updateReviewButton();
+      goToQuestion(0);
+    });
+  }
+  if (el.prevButton) {
+    el.prevButton.addEventListener("click", () => {
+      if (state.current > 0) {
+        goToQuestion(state.current - 1);
+      }
+    });
+  }
+  if (el.nextButton) {
+    el.nextButton.addEventListener("click", () => {
+      if (state.current < state.order.length) {
+        goToQuestion(state.current + 1);
+      }
+    });
+  }
+
+  if (closeBtn) closeBtn.addEventListener("click", closeImageModal);
+  if (backdrop) backdrop.addEventListener("click", closeImageModal);
+
+  if (el.holdAnswerButton) {
+    el.holdAnswerButton.addEventListener("click", () => {
+      togglePeeking();
+    });
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (el.workspace && el.workspace.hidden) return;
+    if (e.target && e.target.matches && e.target.matches("input, textarea")) return;
+
+    if (e.key.toLowerCase() === "h" || e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      if (e.repeat) return;
+      togglePeeking();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      if (state.current > 0) {
+        goToQuestion(state.current - 1);
+      }
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      if (state.current < state.order.length) {
+        goToQuestion(state.current + 1);
+      }
+    } else if (e.key === "Enter" || e.key === " ") {
+      if (el.nextButton && !el.nextButton.disabled) {
+        e.preventDefault();
+        el.nextButton.click();
+      }
+    }
   });
 }
-
-window.addEventListener("keydown", (e) => {
-  if (el.workspace.hidden) return;
-  if (e.target.matches("input, textarea")) return;
-
-  if (e.key.toLowerCase() === "h" || e.key.toLowerCase() === "a") {
-    e.preventDefault();
-    if (e.repeat) return;
-    togglePeeking();
-  } else if (e.key === "ArrowLeft") {
-    e.preventDefault();
-    if (state.current > 0) {
-      goToQuestion(state.current - 1);
-    }
-  } else if (e.key === "ArrowRight") {
-    e.preventDefault();
-    if (state.current < state.order.length) {
-      goToQuestion(state.current + 1);
-    }
-  } else if (e.key === "Enter" || e.key === " ") {
-    if (!el.nextButton.disabled) {
-      e.preventDefault();
-      el.nextButton.click();
-    }
-  }
-});
 
 async function importFromUrl() {
   const url = el.urlInput.value.trim();
