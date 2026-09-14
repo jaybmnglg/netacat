@@ -8,6 +8,25 @@ const state = {
   showResults: false
 };
 
+let navDirection = null;
+let lastScrolledQuestion = null;
+
+function goToQuestion(targetIndex) {
+  if (targetIndex < 0 || targetIndex > state.order.length) return;
+  if (targetIndex > state.current) {
+    navDirection = "next";
+  } else if (targetIndex < state.current) {
+    navDirection = "prev";
+  } else {
+    navDirection = null;
+  }
+  if (targetIndex !== state.current) {
+    state.peeking = false;
+  }
+  state.current = targetIndex;
+  render();
+}
+
 const el = {
   importForm: document.querySelector("#importForm"),
   importer: document.querySelector("#importer"),
@@ -77,11 +96,27 @@ el.themeToggle.addEventListener("change", () => {
 el.shuffleButton.addEventListener("click", () => {
   shuffleOrder();
   state.current = 0;
+  state.peeking = false;
+  lastScrolledQuestion = null;
   render();
 });
+function updateReviewButton() {
+  if (!el.reviewButton) return;
+  const span = el.reviewButton.querySelector("span");
+  const label = state.reviewMode ? "Practice" : "Review";
+  if (span) {
+    span.textContent = label;
+  } else {
+    el.reviewButton.textContent = label;
+  }
+  el.reviewButton.classList.toggle("active", Boolean(state.reviewMode));
+  el.reviewButton.setAttribute("aria-pressed", String(Boolean(state.reviewMode)));
+  el.reviewButton.title = state.reviewMode ? "Exit review mode (switch to practice)" : "Toggle review mode";
+}
+
 el.reviewButton.addEventListener("click", () => {
   state.reviewMode = !state.reviewMode;
-  el.reviewButton.textContent = state.reviewMode ? "Practice" : "Review";
+  updateReviewButton();
   render();
 });
 el.resetButton.addEventListener("click", openResetConfirmModal);
@@ -104,9 +139,8 @@ if (el.confirmResetBtn) {
 if (el.resultsBackBtn) {
   el.resultsBackBtn.addEventListener("click", () => {
     if (state.order.length > 0) {
-      state.current = state.order.length - 1;
       state.showResults = false;
-      render();
+      goToQuestion(state.order.length - 1);
     }
   });
 }
@@ -114,9 +148,8 @@ if (el.resultsReviewBtn) {
   el.resultsReviewBtn.addEventListener("click", () => {
     state.showResults = false;
     state.reviewMode = true;
-    el.reviewButton.textContent = "Practice";
-    state.current = 0;
-    render();
+    updateReviewButton();
+    goToQuestion(0);
   });
 }
 
@@ -136,34 +169,38 @@ function resetQuizProgress() {
     question.checked = false;
     question.correct = false;
   });
+  state.peeking = false;
+  lastScrolledQuestion = null;
   state.showResults = false;
-  state.current = 0;
-  render();
+  goToQuestion(0);
 }
 el.prevButton.addEventListener("click", () => {
   if (state.current > 0) {
-    state.current--;
-    render();
+    goToQuestion(state.current - 1);
   }
 });
 el.nextButton.addEventListener("click", () => {
   if (state.current < state.order.length) {
-    state.current++;
-    render();
+    goToQuestion(state.current + 1);
   }
 });
+
+function togglePeeking() {
+  const question = currentQuestion();
+  if (!question || question.checked || state.reviewMode) return;
+  state.peeking = !state.peeking;
+  render();
+}
 
 function startPeeking() {
   if (state.peeking) return;
   state.peeking = true;
-  if (el.holdAnswerButton) el.holdAnswerButton.classList.add("peeking");
   render();
 }
 
 function stopPeeking() {
   if (!state.peeking) return;
   state.peeking = false;
-  if (el.holdAnswerButton) el.holdAnswerButton.classList.remove("peeking");
   render();
 }
 
@@ -186,15 +223,9 @@ if (closeBtn) closeBtn.addEventListener("click", closeImageModal);
 if (backdrop) backdrop.addEventListener("click", closeImageModal);
 
 if (el.holdAnswerButton) {
-  el.holdAnswerButton.addEventListener("mousedown", startPeeking);
-  el.holdAnswerButton.addEventListener("mouseup", stopPeeking);
-  el.holdAnswerButton.addEventListener("mouseleave", stopPeeking);
-  el.holdAnswerButton.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    startPeeking();
+  el.holdAnswerButton.addEventListener("click", () => {
+    togglePeeking();
   });
-  el.holdAnswerButton.addEventListener("touchend", stopPeeking);
-  el.holdAnswerButton.addEventListener("touchcancel", stopPeeking);
 }
 
 window.addEventListener("keydown", (e) => {
@@ -203,30 +234,23 @@ window.addEventListener("keydown", (e) => {
 
   if (e.key.toLowerCase() === "h" || e.key.toLowerCase() === "a") {
     e.preventDefault();
-    startPeeking();
+    if (e.repeat) return;
+    togglePeeking();
   } else if (e.key === "ArrowLeft") {
     e.preventDefault();
     if (state.current > 0) {
-      state.current--;
-      render();
+      goToQuestion(state.current - 1);
     }
   } else if (e.key === "ArrowRight") {
     e.preventDefault();
     if (state.current < state.order.length) {
-      state.current++;
-      render();
+      goToQuestion(state.current + 1);
     }
   } else if (e.key === "Enter" || e.key === " ") {
     if (!el.nextButton.disabled) {
       e.preventDefault();
       el.nextButton.click();
     }
-  }
-});
-
-window.addEventListener("keyup", (e) => {
-  if (e.key.toLowerCase() === "h" || e.key.toLowerCase() === "a") {
-    stopPeeking();
   }
 });
 
@@ -308,7 +332,8 @@ function loadExam(exam) {
   state.reviewMode = false;
   state.peeking = false;
   state.showResults = false;
-  el.reviewButton.textContent = "Review";
+  lastScrolledQuestion = null;
+  updateReviewButton();
   state.questions = exam.questions.map((question, index) => {
     let matchingData = question.matchingData;
     if (matchingData && matchingData.targets?.length && matchingData.sources?.length) {
@@ -907,7 +932,22 @@ function render() {
 
   el.prevButton.disabled = state.current === 0;
   el.nextButton.disabled = false;
-  if (el.holdAnswerButton) el.holdAnswerButton.disabled = false;
+  if (el.holdAnswerButton) {
+    const isRevealed = Boolean(question.checked || state.reviewMode);
+    el.holdAnswerButton.disabled = isRevealed;
+    el.holdAnswerButton.classList.toggle("peeking", Boolean(state.peeking && !isRevealed));
+    el.holdAnswerButton.setAttribute("aria-pressed", String(Boolean(state.peeking && !isRevealed)));
+    const btnSpan = el.holdAnswerButton.querySelector("span");
+    if (btnSpan) {
+      btnSpan.textContent = state.peeking && !isRevealed ? "Hide Answer" : "Show Answer";
+    }
+    el.holdAnswerButton.title = isRevealed
+      ? "Answer is already displayed"
+      : state.peeking
+        ? "Hide answer (H or A)"
+        : "Show answer (H or A)";
+  }
+  updateReviewButton();
 }
 
 function renderResultsPanel() {
@@ -978,6 +1018,20 @@ function renderStats() {
   el.totalValue.textContent = state.questions.length;
 }
 
+function scrollActiveDotIntoView(activeDot) {
+  if (!activeDot || !el.questionList) return;
+  requestAnimationFrame(() => {
+    const list = el.questionList;
+    const dotLeft = activeDot.offsetLeft;
+    const dotWidth = activeDot.offsetWidth;
+    const listWidth = list.clientWidth;
+    list.scrollTo({
+      left: dotLeft - listWidth / 2 + dotWidth / 2,
+      behavior: "smooth"
+    });
+  });
+}
+
 function renderQuestionList() {
   el.questionList.innerHTML = "";
   let activeDot = null;
@@ -994,8 +1048,7 @@ function renderQuestionList() {
     button.type = "button";
     button.addEventListener("click", () => {
       state.showResults = false;
-      state.current = displayIndex;
-      render();
+      goToQuestion(displayIndex);
     });
     el.questionList.append(button);
   });
@@ -1015,10 +1068,10 @@ function renderQuestionList() {
   });
   el.questionList.append(resultsBtn);
 
-  if (activeDot) {
-    requestAnimationFrame(() => {
-      activeDot.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-    });
+  const currentKey = state.showResults ? "results" : state.current;
+  if (activeDot && lastScrolledQuestion !== currentKey) {
+    lastScrolledQuestion = currentKey;
+    scrollActiveDotIntoView(activeDot);
   }
 }
 
@@ -1340,6 +1393,7 @@ function checkCurrent() {
 
     question.checked = true;
     question.correct = allCorrect;
+    state.peeking = false;
     render();
     return;
   }
@@ -1352,6 +1406,7 @@ function checkCurrent() {
   const allCorrectSelected = question.choices.every((choice, index) => !choice.correct || question.selected.includes(index));
   question.checked = true;
   question.correct = selectedCorrect && allCorrectSelected;
+  state.peeking = false;
   render();
 }
 
