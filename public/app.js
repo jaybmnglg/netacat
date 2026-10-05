@@ -32,10 +32,8 @@ const selectorMap = {
   importer: "#importer",
   workspace: ".workspace",
   urlInput: "#urlInput",
-  pasteInput: "#pasteInput",
   themeToggle: "#themeToggle",
   loadUrlButton: "#loadUrlButton",
-  loadPasteButton: "#loadPasteButton",
   importStatus: "#importStatus",
   resumeQuizBtn: "#resumeQuizBtn",
   backToImportBtn: "#backToImportBtn",
@@ -214,7 +212,7 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
       importFromUrl();
     });
   }
-  if (el.loadPasteButton) el.loadPasteButton.addEventListener("click", importFromPaste);
+
   if (el.themeToggle) {
     el.themeToggle.addEventListener("change", () => {
       setTheme(el.themeToggle.checked ? "dark" : "light");
@@ -387,17 +385,6 @@ async function importFromUrl() {
     setStatus(`${error.message}`, true);
   } finally {
     setBusy(false);
-  }
-}
-
-function importFromPaste() {
-  const content = el.pasteInput.value.trim();
-  if (!content) return setStatus("Paste page HTML or copied article text first.", true);
-  const baseUrl = el.urlInput.value.trim() || location.href;
-  try {
-    loadExam(parseExam(content, baseUrl));
-  } catch (error) {
-    setStatus(error.message, true);
   }
 }
 
@@ -1699,7 +1686,6 @@ function shuffle(items) {
 
 function setBusy(isBusy) {
   el.loadUrlButton.disabled = isBusy;
-  el.loadPasteButton.disabled = isBusy;
 }
 
 function setStatus(message, isError = false) {

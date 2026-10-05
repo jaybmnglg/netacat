@@ -267,76 +267,6 @@ input[type="url"]:focus {
   transform: scale(0.9);
 }
 
-.advanced-import {
-  position: relative;
-}
-
-.advanced-import summary {
-  font-size: 13px;
-  font-weight: 400;
-  padding: 10px 8px;
-  border: none;
-  border-radius: 0;
-  background: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  white-space: nowrap;
-  user-select: none;
-  transition: color 0.15s ease;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.advanced-import summary:hover {
-  color: var(--text);
-}
-
-.advanced-popover {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  width: min(520px, calc(100vw - 48px));
-  padding: var(--spacing-sm);
-  background-color: var(--surface);
-  border: var(--border-thin) solid var(--border);
-  border-radius: var(--rounded-md);
-  box-shadow: var(--shadow-lifted);
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  text-align: left;
-}
-
-.advanced-popover textarea {
-  width: 100%;
-  min-height: 140px;
-  resize: vertical;
-  border: var(--border-thin) solid var(--border);
-  border-radius: var(--rounded-xs);
-  background-color: var(--surface-raised);
-  color: var(--text);
-  padding: 10px;
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 13px;
-}
-
-#loadPasteButton {
-  align-self: flex-end;
-  min-height: 35px;
-  padding: 0 var(--spacing-sm);
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 700;
-  border: var(--border-thin) solid var(--color-primary);
-  border-radius: var(--rounded-sm);
-  cursor: pointer;
-}
-
-#loadPasteButton:active {
-  transform: scale(0.9);
-}
-
 .status {
   margin: var(--spacing-xs) 0 0;
   font-size: 14px;
@@ -1607,7 +1537,8 @@ input[type="url"]:focus {
   }
 
   .quiz-viewport {
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
     padding: 16px 12px 170px;
   }
 
@@ -1818,22 +1749,6 @@ input[type="url"]:focus {
     min-height: 44px;
   }
 
-  .advanced-import {
-    width: 100%;
-  }
-
-  .advanced-import summary {
-    display: block;
-    width: 100%;
-    text-align: center;
-  }
-
-  .advanced-popover {
-    width: calc(100vw - 24px);
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
-  }
 
   .results-panel {
     padding: 20px 12px;
