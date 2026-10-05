@@ -51,7 +51,7 @@ PORT=5179 npm start
 ## How to Use
 
 1. **Import a Quiz**: Paste an ITExamAnswers URL into the top bar and click **Import**.
-   - Example URL: `https://itexamanswers.net/ccna-2-v7-modules-1-4-switching-concepts-vlans-and-intervlan-routing-test-online.html`
+   - Example URL: `https://itexamanswers.net/ccna-2-v7-modules-7-9-available-and-reliable-networks-test-online.html`
 2. **Practice**: Answer questions one by one with live score tracking.
 3. **Shuffle / Reset**: Click **Shuffle** anytime to re-order the questions.
 4. **Review Mode**: Click **Review** to reveal answer keys and detailed explanations.

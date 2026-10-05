@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,8 +9,61 @@
     <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
   </head>
   <body>
-    <main class="app-shell">
-      <section class="topbar" aria-label="Import controls">
+    <!-- Import Screen View -->
+    <section class="importer-screen" id="importer">
+      <div class="importer-card">
+        <div class="importer-brand">
+          <img src="./netacat.png" alt="netacat logo" class="brand-logo">
+          <h1>netacat</h1>
+          <p>Import and practice CCNA / IT exam questions</p>
+        </div>
+        <form class="import-bar" id="importForm">
+          <div class="input-wrapper">
+            <svg class="link-icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <input id="urlInput" type="url" placeholder="Paste ITExamAnswers URL..." value="https://itexamanswers.net/ccna-2-v7-modules-7-9-available-and-reliable-networks-test-online.html">
+          </div>
+          <div class="import-actions">
+            <button id="loadUrlButton" type="submit" class="primary">Import</button>
+            <details class="advanced-import">
+              <summary title="Paste raw HTML or copied text">Paste HTML</summary>
+              <div class="advanced-popover">
+                <textarea id="pasteInput" spellcheck="false" placeholder="Paste full page HTML or article text here..."></textarea>
+                <button id="loadPasteButton" type="button">Import Pasted Content</button>
+              </div>
+            </details>
+          </div>
+        </form>
+        <p id="importStatus" class="status"></p>
+        <div class="resume-wrapper">
+          <button id="resumeQuizBtn" type="button" class="btn-resume" hidden>Resume Current Quiz →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Quiz Workspace View -->
+    <main class="quiz-app-shell workspace" hidden>
+      <!-- Top Bar: Back button, Question Carousel (< Q1 Q2 >), Theme / Score -->
+      <header class="quiz-topbar">
+        <div class="topbar-left">
+          <button id="backToImportBtn" type="button" class="back-to-import-btn" title="Back to Import Screen">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <span>Import</span>
+          </button>
+        </div>
+
+        <div class="top-nav-carousel">
+          <button id="topCarouselPrev" type="button" class="top-arrow-btn" aria-label="Scroll questions left">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div id="questionList" class="top-q-list" role="tablist"></div>
+          <button id="topCarouselNext" type="button" class="top-arrow-btn" aria-label="Scroll questions right">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
         <div class="topbar-meta">
           <label class="theme-toggle" title="Toggle dark mode">
             <input id="themeToggle" type="checkbox">
@@ -19,151 +72,139 @@
           </label>
           <div class="score-strip">
             <span><strong id="scoreValue">0</strong> correct</span>
-            <span><strong id="answeredValue">0</strong>/<strong id="totalValue">0</strong> answered</span>
+            <span><strong id="answeredValue">0</strong>/<strong id="totalValue">0</strong></span>
           </div>
         </div>
-      </section>
+      </header>
 
-      <section class="importer" id="importer">
-        <form class="import-bar" id="importForm">
-          <div class="input-wrapper">
-            <svg class="link-icon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-            </svg>
-            <input id="urlInput" type="url" placeholder="Paste ITExamAnswers URL..." value="https://itexamanswers.net/ccna-2-v7-modules-1-4-switching-concepts-vlans-and-intervlan-routing-test-online.html">
-          </div>
-          <button id="loadUrlButton" type="submit" class="primary">Import</button>
-          <details class="advanced-import">
-            <summary title="Paste raw HTML or copied text">Paste HTML</summary>
-            <div class="advanced-popover">
-              <textarea id="pasteInput" spellcheck="false" placeholder="Paste full page HTML or article text here..."></textarea>
-              <button id="loadPasteButton" type="button">Import Pasted Content</button>
+      <!-- Main Quiz Viewport Area with Side Navigation Buttons -->
+      <div class="quiz-viewport">
+        <!-- Floating Side Prev Button -->
+        <button id="sidePrevButton" type="button" class="side-nav-btn side-nav-prev" title="Previous question (←)" aria-label="Previous question">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+
+        <!-- Centered Main Quiz Content Column -->
+        <div class="quiz-center-column">
+          <div id="questionContainer" class="question-container">
+            <div class="q-header-row">
+              <h1 id="questionTitle" class="question-title">Question 1</h1>
+              <span id="typeBadge" class="type-badge">Single choice</span>
             </div>
-          </details>
-        </form>
-        <p id="importStatus" class="status"></p>
-      </section>
 
-      <section class="workspace" hidden>
-        <div class="question-nav-strip">
-          <div id="questionList" class="question-list"></div>
+            <p id="questionText" class="question-text"></p>
+            <div id="imageStrip" class="image-strip"></div>
+            
+            <div id="matchingPanel" class="matching-panel" hidden></div>
+            
+            <form id="choicesForm" class="choices-list"></form>
+
+            <!-- Explanation Card Popping Underneath Choices -->
+            <section id="explanationPanel" class="explanation-popover" hidden>
+              <div class="explanation-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+                <span>EXPLANATION</span>
+              </div>
+              <p id="answerLine" class="explanation-answer-line"></p>
+              <div id="explanationText" class="explanation-content"></div>
+            </section>
+          </div>
+
+          <!-- Question counter centered at the bottom -->
+          <div id="questionCounterCenter" class="question-counter-center">1 of 3 Questions</div>
+
+          <!-- Results Panel -->
+          <section id="resultsPanel" class="results-panel" hidden>
+            <div class="results-arc-wrapper">
+              <svg class="results-arc" viewBox="0 0 200 120" fill="none">
+                <path d="M20 110 A80 80 0 0 1 180 110" stroke="var(--border)" stroke-width="12" stroke-linecap="round" fill="none"/>
+                <path id="arcFill" d="M20 110 A80 80 0 0 1 180 110" stroke="var(--color-primary)" stroke-width="12" stroke-linecap="round" fill="none" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+              </svg>
+              <div class="results-arc-percent" id="arcPercent">0%</div>
+            </div>
+
+            <div class="results-center-text">
+              <p class="results-score-line" id="resultsSubtitle"></p>
+              <p class="results-message" id="resultsMessage"></p>
+            </div>
+
+            <div class="results-stats-row">
+              <div class="results-stat">
+                <span class="results-stat-value text-good" id="correctCountVal">0</span>
+                <span class="results-stat-label">Correct</span>
+              </div>
+              <div class="results-stat-divider"></div>
+              <div class="results-stat">
+                <span class="results-stat-value text-bad" id="wrongCountVal">0</span>
+                <span class="results-stat-label">Incorrect</span>
+              </div>
+              <div class="results-stat-divider"></div>
+              <div class="results-stat">
+                <span class="results-stat-value" id="finalScoreVal">0 / 0</span>
+                <span class="results-stat-label">Score</span>
+              </div>
+            </div>
+
+            <div id="resultsBadge" hidden></div>
+            <span id="finalPercentVal" hidden></span>
+
+            <div class="results-actions">
+              <button id="resultsBackBtn" type="button" class="btn-subtle">← Back</button>
+              <button id="resultsResetBtn" type="button" class="btn-results-reset">Reset</button>
+              <button id="resultsReviewBtn" type="button" class="btn-subtle">Review</button>
+            </div>
+          </section>
         </div>
 
-        <section class="quiz-panel" aria-live="polite">
-          <div id="questionContainer" class="quiz-body-grid">
-            <div class="quiz-main-column">
-              <div class="question-meta">
-                <div class="meta-left">
-                  <span id="questionCounter">Question 0 of 0</span>
-                  <span id="typeBadge">Single choice</span>
-                </div>
-                <div class="nav-group">
-                  <button id="prevButton" type="button" class="btn-subtle" title="Previous question (←)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                    <span>Back</span>
-                  </button>
-                  <button id="nextButton" type="button" class="primary" title="Next question (→)">
-                    <span>Next</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </button>
-                </div>
-              </div>
-              <h2 id="questionText"></h2>
-              <div id="imageStrip" class="image-strip"></div>
-              <div id="matchingPanel" class="matching-panel" hidden></div>
-              <form id="choicesForm" class="choices"></form>
-              <div class="controls">
-                <div class="utility-group">
-                  <button id="shuffleButton" type="button" class="btn-subtle" title="Shuffle questions">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
-                    <span>Shuffle</span>
-                  </button>
-                  <button id="reviewButton" type="button" class="btn-subtle" title="Toggle review mode">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    <span>Review</span>
-                  </button>
-                  <button id="resetButton" type="button" class="btn-subtle" title="Reset answers">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
-                    <span>Reset</span>
-                  </button>
-                </div>
-                <div class="action-group">
-                  <button id="holdAnswerButton" type="button" class="hold-peek-btn" title="Toggle answer visibility (H or A)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <span>Show Answer</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div class="quiz-side-column">
-              <section id="explanationPanel" class="explanation" hidden>
-                <h3>Explanation</h3>
-                <p id="answerLine"></p>
-                <div id="explanationText"></div>
-              </section>
+        <!-- Floating Side Next Button -->
+        <button id="sideNextButton" type="button" class="side-nav-btn side-nav-next" title="Next question (→)" aria-label="Next question">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
 
-              <div id="explanationPlaceholder" class="explanation-placeholder">
-                <span class="placeholder-label">Explanation</span>
-              </div>
+      <!-- Bottom Black Action Bar -->
+      <footer class="bottom-bar">
+        <div class="bottom-left-group">
+          <button id="shuffleButton" type="button" class="btn-bottom-bar" title="Shuffle questions">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+            <span>Shuffle</span>
+          </button>
+          <button id="reviewButton" type="button" class="btn-bottom-bar" title="Toggle review mode">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <span>Review</span>
+          </button>
+          <button id="resetButton" type="button" class="btn-bottom-bar" title="Reset answers">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+            <span>Reset</span>
+          </button>
+          <button id="holdAnswerButton" type="button" class="btn-bottom-bar" title="Toggle answer visibility (H or A)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Show Answer</span>
+          </button>
+        </div>
+
+        <div class="bottom-right-group">
+          <div class="bottom-skip-actions">
+            <button id="skipAllButton" type="button" class="btn-text-action" title="Skip remaining questions and view results">Skip All</button>
+            <button id="skipQuestionButton" type="button" class="btn-text-action" title="Skip to next question">Skip Question</button>
+          </div>
+          <div class="bottom-primary-actions">
+            <button id="submitNextButton" type="button" class="btn-submit-pill">Submit</button>
+            <div class="logo-badge-container" title="netacat">
+              <img src="./netacat.png" alt="netacat avatar" class="bottom-bar-avatar">
             </div>
           </div>
-        <section id="resultsPanel" class="results-panel" hidden>
-          <div class="results-header">
-            <div class="results-badge" id="resultsBadge">Quiz Completed</div>
-            <h2>Quiz Performance Summary</h2>
-            <p class="results-subtitle" id="resultsSubtitle"></p>
-          </div>
-
-          <div class="analytics-grid">
-            <div class="stat-card primary-stat">
-              <span class="stat-label">Final Score</span>
-              <div class="stat-value" id="finalScoreVal">0 / 0</div>
-              <span class="stat-sub" id="finalPercentVal">0%</span>
-            </div>
-
-            <div class="stat-card">
-              <span class="stat-label">Correct Answers</span>
-              <div class="stat-value text-good" id="correctCountVal">0</div>
-              <span class="stat-sub">Passed</span>
-            </div>
-
-            <div class="stat-card">
-              <span class="stat-label">Incorrect Answers</span>
-              <div class="stat-value text-bad" id="wrongCountVal">0</div>
-              <span class="stat-sub">Needs Review</span>
-            </div>
-          </div>
-
-          <div class="breakdown-section">
-            <h4>Performance Breakdown by Type</h4>
-            <div id="breakdownList" class="breakdown-list"></div>
-          </div>
-
-          <div class="results-actions">
-            <button id="resultsBackBtn" type="button" class="btn-subtle">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-              <span>Back to Last Question</span>
-            </button>
-
-            <button id="resultsReviewBtn" type="button" class="btn-subtle">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <span>Review All Questions</span>
-            </button>
-
-            <button id="resultsResetBtn" type="button" class="btn-danger">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              <span>Reset Progress</span>
-            </button>
-          </div>
-        </section>
-      </section>
+        </div>
+      </footer>
     </main>
 
     <template id="choiceTemplate">
-      <label class="choice">
-        <input name="choice" type="radio">
-        <span></span>
+      <label class="choice-item">
+        <input name="choice" type="radio" class="choice-native-input">
+        <div class="choice-custom-radio">
+          <div class="choice-radio-inner"></div>
+        </div>
+        <div class="choice-text"></div>
       </label>
     </template>
 
@@ -174,6 +215,7 @@
         <img id="modalImage" src="" alt="Enlarged exhibit">
       </div>
     </div>
+
     <div id="resetConfirmModal" class="confirm-modal" hidden>
       <div class="confirm-modal-backdrop" id="resetModalBackdrop"></div>
       <div class="confirm-modal-box">

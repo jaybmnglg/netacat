@@ -37,28 +37,34 @@ const selectorMap = {
   loadUrlButton: "#loadUrlButton",
   loadPasteButton: "#loadPasteButton",
   importStatus: "#importStatus",
+  resumeQuizBtn: "#resumeQuizBtn",
+  backToImportBtn: "#backToImportBtn",
   scoreValue: "#scoreValue",
   answeredValue: "#answeredValue",
   totalValue: "#totalValue",
   questionList: "#questionList",
+  topCarouselPrev: "#topCarouselPrev",
+  topCarouselNext: "#topCarouselNext",
+  sidePrevButton: "#sidePrevButton",
+  sideNextButton: "#sideNextButton",
   shuffleButton: "#shuffleButton",
   reviewButton: "#reviewButton",
   resetButton: "#resetButton",
-  questionCounter: "#questionCounter",
+  holdAnswerButton: "#holdAnswerButton",
+  questionTitle: "#questionTitle",
+  questionCounterCenter: "#questionCounterCenter",
   typeBadge: "#typeBadge",
   questionText: "#questionText",
   imageStrip: "#imageStrip",
   matchingPanel: "#matchingPanel",
   choicesForm: "#choicesForm",
   choiceTemplate: "#choiceTemplate",
-  prevButton: "#prevButton",
-  holdAnswerButton: "#holdAnswerButton",
-  nextButton: "#nextButton",
+  skipAllButton: "#skipAllButton",
+  skipQuestionButton: "#skipQuestionButton",
+  submitNextButton: "#submitNextButton",
   explanationPanel: "#explanationPanel",
-  explanationPlaceholder: "#explanationPlaceholder",
   answerLine: "#answerLine",
   explanationText: "#explanationText",
-  quizPanel: ".quiz-panel",
   questionContainer: "#questionContainer",
   resultsPanel: "#resultsPanel",
   resultsBadge: "#resultsBadge",
@@ -158,6 +164,41 @@ function closeImageModal() {
   if (modalEl) modalEl.hidden = true;
 }
 
+function shakeSubmitButton() {
+  if (!el.submitNextButton) return;
+  el.submitNextButton.style.transform = "translateX(5px)";
+  setTimeout(() => {
+    if (el.submitNextButton) el.submitNextButton.style.transform = "translateX(-5px)";
+    setTimeout(() => {
+      if (el.submitNextButton) el.submitNextButton.style.transform = "";
+    }, 100);
+  }, 100);
+}
+
+function handleSubmitOrNext() {
+  if (state.showResults) return;
+  const question = currentQuestion();
+  if (!question) return;
+
+  if (question.checked || state.reviewMode) {
+    goToQuestion(state.current + 1);
+  } else {
+    if (question.type === "matching") {
+      const userMatches = question.userMatches || {};
+      if (!Object.keys(userMatches).length) {
+        shakeSubmitButton();
+        return;
+      }
+    } else {
+      if (!question.selected.length) {
+        shakeSubmitButton();
+        return;
+      }
+    }
+    checkCurrent();
+  }
+}
+
 if (typeof window !== "undefined" && typeof document !== "undefined") {
   initTheme();
 
@@ -179,6 +220,50 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
       setTheme(el.themeToggle.checked ? "dark" : "light");
     });
   }
+
+  if (el.backToImportBtn) {
+    el.backToImportBtn.addEventListener("click", () => {
+      if (el.workspace) el.workspace.hidden = true;
+      if (el.importer) el.importer.hidden = false;
+      if (el.resumeQuizBtn) el.resumeQuizBtn.hidden = false;
+    });
+  }
+
+  if (el.resumeQuizBtn) {
+    el.resumeQuizBtn.addEventListener("click", () => {
+      if (el.importer) el.importer.hidden = true;
+      if (el.workspace) el.workspace.hidden = false;
+    });
+  }
+
+  if (el.topCarouselPrev) {
+    el.topCarouselPrev.addEventListener("click", () => {
+      if (el.questionList) el.questionList.scrollBy({ left: -140, behavior: "smooth" });
+    });
+  }
+
+  if (el.topCarouselNext) {
+    el.topCarouselNext.addEventListener("click", () => {
+      if (el.questionList) el.questionList.scrollBy({ left: 140, behavior: "smooth" });
+    });
+  }
+
+  if (el.sidePrevButton) {
+    el.sidePrevButton.addEventListener("click", () => {
+      if (state.current > 0) {
+        goToQuestion(state.current - 1);
+      }
+    });
+  }
+
+  if (el.sideNextButton) {
+    el.sideNextButton.addEventListener("click", () => {
+      if (state.current < state.order.length) {
+        goToQuestion(state.current + 1);
+      }
+    });
+  }
+
   if (el.shuffleButton) {
     el.shuffleButton.addEventListener("click", () => {
       shuffleOrder();
@@ -196,6 +281,30 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
     });
   }
   if (el.resetButton) el.resetButton.addEventListener("click", openResetConfirmModal);
+
+  if (el.holdAnswerButton) {
+    el.holdAnswerButton.addEventListener("click", () => {
+      togglePeeking();
+    });
+  }
+
+  if (el.skipQuestionButton) {
+    el.skipQuestionButton.addEventListener("click", () => {
+      if (state.current < state.order.length) {
+        goToQuestion(state.current + 1);
+      }
+    });
+  }
+
+  if (el.skipAllButton) {
+    el.skipAllButton.addEventListener("click", () => {
+      goToQuestion(state.order.length);
+    });
+  }
+
+  if (el.submitNextButton) {
+    el.submitNextButton.addEventListener("click", handleSubmitOrNext);
+  }
 
   if (el.resultsResetBtn) el.resultsResetBtn.addEventListener("click", openResetConfirmModal);
   if (el.cancelResetBtn) el.cancelResetBtn.addEventListener("click", closeResetConfirmModal);
@@ -222,29 +331,9 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
       goToQuestion(0);
     });
   }
-  if (el.prevButton) {
-    el.prevButton.addEventListener("click", () => {
-      if (state.current > 0) {
-        goToQuestion(state.current - 1);
-      }
-    });
-  }
-  if (el.nextButton) {
-    el.nextButton.addEventListener("click", () => {
-      if (state.current < state.order.length) {
-        goToQuestion(state.current + 1);
-      }
-    });
-  }
 
   if (closeBtn) closeBtn.addEventListener("click", closeImageModal);
   if (backdrop) backdrop.addEventListener("click", closeImageModal);
-
-  if (el.holdAnswerButton) {
-    el.holdAnswerButton.addEventListener("click", () => {
-      togglePeeking();
-    });
-  }
 
   window.addEventListener("keydown", (e) => {
     if (el.workspace && el.workspace.hidden) return;
@@ -264,11 +353,9 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
       if (state.current < state.order.length) {
         goToQuestion(state.current + 1);
       }
-    } else if (e.key === "Enter" || e.key === " ") {
-      if (el.nextButton && !el.nextButton.disabled) {
-        e.preventDefault();
-        el.nextButton.click();
-      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmitOrNext();
     }
   });
 }
@@ -391,7 +478,9 @@ function loadExam(exam) {
   }
 
   shuffleOrder();
-  el.workspace.hidden = false;
+  if (el.importer) el.importer.hidden = true;
+  if (el.workspace) el.workspace.hidden = false;
+  if (el.resumeQuizBtn) el.resumeQuizBtn.hidden = false;
   setStatus(`Imported ${state.questions.length} questions from ${exam.title || "the page"}.`);
   render();
 }
@@ -913,16 +1002,25 @@ function mergeAnswers(target, answerExam) {
 function render() {
   state.showResults = (state.current === state.order.length);
   renderStats();
-  renderQuestionList();
+  renderTopCarousel();
 
   if (state.showResults) {
     if (el.questionContainer) el.questionContainer.hidden = true;
+    if (el.questionCounterCenter) el.questionCounterCenter.hidden = true;
     if (el.resultsPanel) {
       el.resultsPanel.hidden = false;
       el.resultsPanel.classList.remove("question-animating");
       void el.resultsPanel.offsetWidth;
       el.resultsPanel.classList.add("question-animating");
     }
+    if (el.sidePrevButton) el.sidePrevButton.disabled = false;
+    if (el.sideNextButton) el.sideNextButton.disabled = true;
+    if (el.submitNextButton) {
+      el.submitNextButton.disabled = true;
+      el.submitNextButton.textContent = "Finished";
+    }
+    if (el.skipQuestionButton) el.skipQuestionButton.disabled = true;
+    if (el.skipAllButton) el.skipAllButton.disabled = true;
     renderResultsPanel();
     return;
   }
@@ -933,52 +1031,77 @@ function render() {
     void el.questionContainer.offsetWidth;
     el.questionContainer.classList.add("question-animating");
   }
+  if (el.questionCounterCenter) el.questionCounterCenter.hidden = false;
   if (el.resultsPanel) el.resultsPanel.hidden = true;
+  if (el.skipQuestionButton) el.skipQuestionButton.disabled = false;
+  if (el.skipAllButton) el.skipAllButton.disabled = false;
 
   const question = currentQuestion();
   if (!question) return;
 
-  el.questionCounter.textContent = `Question ${state.current + 1} of ${state.order.length}`;
-  el.typeBadge.textContent = question.type === "matching"
-    ? "Matching"
-    : question.chooseCount > 1
-      ? `Choose ${question.chooseCount}`
-      : "Single choice";
-  el.questionText.textContent = question.prompt;
+  if (el.questionTitle) el.questionTitle.textContent = `Question ${state.current + 1}`;
+  if (el.questionCounterCenter) {
+    el.questionCounterCenter.textContent = `${state.current + 1} of ${state.order.length} Questions`;
+  }
+  if (el.typeBadge) {
+    el.typeBadge.textContent = question.type === "matching"
+      ? "Matching"
+      : question.chooseCount > 1
+        ? `Choose ${question.chooseCount}`
+        : "Single choice";
+  }
+  if (el.questionText) el.questionText.textContent = question.prompt;
 
-  el.imageStrip.innerHTML = "";
-  question.images.forEach((src) => {
-    const image = document.createElement("img");
-    image.src = src;
-    image.alt = "Question exhibit";
-    image.loading = "lazy";
-    image.title = "Click to view full size";
-    image.addEventListener("click", () => openImageModal(src));
-    el.imageStrip.append(image);
-  });
+  if (el.imageStrip) {
+    el.imageStrip.innerHTML = "";
+    question.images.forEach((src) => {
+      const image = document.createElement("img");
+      image.src = src;
+      image.alt = "Question exhibit";
+      image.loading = "lazy";
+      image.title = "Click to view full size";
+      image.addEventListener("click", () => openImageModal(src));
+      el.imageStrip.append(image);
+    });
+  }
 
   renderMatching(question);
   renderChoices(question);
   renderExplanation(question);
+  updateSubmitNextButton(question);
 
-  el.prevButton.disabled = state.current === 0;
-  el.nextButton.disabled = false;
+  if (el.sidePrevButton) {
+    el.sidePrevButton.disabled = state.current === 0;
+  }
+  if (el.sideNextButton) {
+    el.sideNextButton.disabled = false;
+  }
+
   if (el.holdAnswerButton) {
     const isRevealed = Boolean(question.checked || state.reviewMode);
     el.holdAnswerButton.disabled = isRevealed;
-    el.holdAnswerButton.classList.toggle("peeking", Boolean(state.peeking && !isRevealed));
-    el.holdAnswerButton.setAttribute("aria-pressed", String(Boolean(state.peeking && !isRevealed)));
+    el.holdAnswerButton.classList.toggle("active", Boolean(state.peeking && !isRevealed));
     const btnSpan = el.holdAnswerButton.querySelector("span");
     if (btnSpan) {
       btnSpan.textContent = state.peeking && !isRevealed ? "Hide Answer" : "Show Answer";
     }
-    el.holdAnswerButton.title = isRevealed
-      ? "Answer is already displayed"
-      : state.peeking
-        ? "Hide answer (H or A)"
-        : "Show answer (H or A)";
   }
   updateReviewButton();
+}
+
+function updateSubmitNextButton(question) {
+  if (!el.submitNextButton) return;
+  if (state.showResults) {
+    el.submitNextButton.disabled = true;
+    el.submitNextButton.textContent = "Finished";
+    return;
+  }
+  el.submitNextButton.disabled = false;
+  if (question.checked || state.reviewMode) {
+    el.submitNextButton.textContent = "Next";
+  } else {
+    el.submitNextButton.textContent = "Submit";
+  }
 }
 
 function renderResultsPanel() {
@@ -987,110 +1110,89 @@ function renderResultsPanel() {
   const correct = state.questions.filter((q) => q.correct).length;
   const wrong = answered - correct;
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const isPassed = percent >= 70;
 
+  // Arc gauge animation
+  const arcFill = document.getElementById("arcFill");
+  const arcPercent = document.getElementById("arcPercent");
+  if (arcFill) {
+    const arcLength = 251.2; // full semicircle path length
+    const offset = arcLength - (arcLength * percent) / 100;
+    arcFill.style.transition = "none";
+    arcFill.style.strokeDashoffset = arcLength;
+    arcFill.style.stroke = isPassed ? "var(--color-primary)" : "var(--wrong)";
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        arcFill.style.transition = "stroke-dashoffset 0.9s ease-out";
+        arcFill.style.strokeDashoffset = offset;
+      });
+    });
+  }
+  if (arcPercent) {
+    arcPercent.textContent = `${percent}%`;
+    arcPercent.style.color = isPassed ? "var(--color-primary)" : "var(--wrong)";
+  }
+
+  // Stats
   if (el.finalScoreVal) el.finalScoreVal.textContent = `${correct} / ${total}`;
-  if (el.finalPercentVal) el.finalPercentVal.textContent = `${percent}%`;
   if (el.correctCountVal) el.correctCountVal.textContent = `${correct}`;
   if (el.wrongCountVal) el.wrongCountVal.textContent = `${wrong}`;
 
-  if (el.resultsBadge) {
-    const isPassed = percent >= 70;
-    el.resultsBadge.textContent = isPassed ? "PASSED (70%+)" : "NEEDS PRACTICE";
-    el.resultsBadge.className = `results-badge ${isPassed ? "pass" : "fail"}`;
-  }
-
+  // Score line & message
   if (el.resultsSubtitle) {
-    el.resultsSubtitle.textContent = `Completed ${answered} of ${total} questions. You scored ${percent}%.`;
+    el.resultsSubtitle.innerHTML = `You have scored <strong>${percent}%</strong>.`;
   }
-
-  if (el.breakdownList) {
-    el.breakdownList.innerHTML = "";
-
-    const types = [
-      { key: "single", label: "Single Choice" },
-      { key: "multi", label: "Multiple Choice" },
-      { key: "matching", label: "Matching & Ordering" }
-    ];
-
-    types.forEach(({ key, label }) => {
-      const typeQuestions = state.questions.filter((q) => {
-        if (key === "matching") return q.type === "matching";
-        if (key === "multi") return q.chooseCount > 1 && q.type !== "matching";
-        return (q.chooseCount || 1) === 1 && q.type !== "matching";
-      });
-
-      if (!typeQuestions.length) return;
-
-      const tTotal = typeQuestions.length;
-      const tCorrect = typeQuestions.filter((q) => q.correct).length;
-      const tPercent = Math.round((tCorrect / tTotal) * 100);
-
-      const row = document.createElement("div");
-      row.className = "breakdown-row";
-      row.innerHTML = `
-        <div class="breakdown-label">
-          <span>${label}</span>
-          <strong>${tCorrect} / ${tTotal} (${tPercent}%)</strong>
-        </div>
-        <div class="breakdown-bar-bg">
-          <div class="breakdown-bar-fill" style="width: ${tPercent}%"></div>
-        </div>
-      `;
-      el.breakdownList.append(row);
-    });
+  const resultsMessage = document.getElementById("resultsMessage");
+  if (resultsMessage) {
+    resultsMessage.textContent = isPassed
+      ? "Congratulations, you have passed the exam."
+      : "";
   }
 }
 
 function renderStats() {
   const answered = state.questions.filter((question) => question.checked).length;
   const score = state.questions.filter((question) => question.correct).length;
-  el.scoreValue.textContent = score;
-  el.answeredValue.textContent = answered;
-  el.totalValue.textContent = state.questions.length;
+  if (el.scoreValue) el.scoreValue.textContent = score;
+  if (el.answeredValue) el.answeredValue.textContent = answered;
+  if (el.totalValue) el.totalValue.textContent = state.questions.length;
 }
 
-function scrollActiveDotIntoView(activeDot) {
-  if (!activeDot || !el.questionList) return;
-  requestAnimationFrame(() => {
-    const list = el.questionList;
-    const dotLeft = activeDot.offsetLeft;
-    const dotWidth = activeDot.offsetWidth;
-    const listWidth = list.clientWidth;
-    list.scrollTo({
-      left: dotLeft - listWidth / 2 + dotWidth / 2,
-      behavior: "smooth"
-    });
-  });
-}
-
-function renderQuestionList() {
+function renderTopCarousel() {
+  if (!el.questionList) return;
   el.questionList.innerHTML = "";
-  let activeDot = null;
+  let activeBadge = null;
+
   state.order.forEach((questionIndex, displayIndex) => {
     const question = state.questions[questionIndex];
-    const button = document.createElement("button");
-    button.className = "question-dot";
+    const badge = document.createElement("button");
+    badge.className = "top-q-badge";
+    badge.type = "button";
+    badge.textContent = `Q${displayIndex + 1}`;
+
     if (!state.showResults && displayIndex === state.current) {
-      button.classList.add("current");
-      activeDot = button;
+      badge.classList.add("current");
+      activeBadge = badge;
     }
-    if (question.checked) button.classList.add(question.correct ? "correct" : "wrong");
-    button.textContent = String(displayIndex + 1);
-    button.type = "button";
-    button.addEventListener("click", () => {
+    if (question.checked) {
+      badge.classList.add(question.correct ? "correct" : "wrong");
+    }
+
+    badge.addEventListener("click", () => {
       state.showResults = false;
       goToQuestion(displayIndex);
     });
-    el.questionList.append(button);
+    el.questionList.append(badge);
   });
 
   const resultsBtn = document.createElement("button");
-  resultsBtn.className = "question-dot results-dot";
-  resultsBtn.textContent = "★ Results";
+  resultsBtn.className = "top-q-badge results-badge";
+  resultsBtn.type = "button";
+  resultsBtn.textContent = "Results Page";
   resultsBtn.title = "View performance summary & analytics";
   if (state.showResults) {
     resultsBtn.classList.add("current");
-    activeDot = resultsBtn;
+    activeBadge = resultsBtn;
   }
   resultsBtn.addEventListener("click", () => {
     state.current = state.order.length;
@@ -1100,9 +1202,18 @@ function renderQuestionList() {
   el.questionList.append(resultsBtn);
 
   const currentKey = state.showResults ? "results" : state.current;
-  if (activeDot && lastScrolledQuestion !== currentKey) {
+  if (activeBadge && lastScrolledQuestion !== currentKey) {
     lastScrolledQuestion = currentKey;
-    scrollActiveDotIntoView(activeDot);
+    requestAnimationFrame(() => {
+      const list = el.questionList;
+      const badgeLeft = activeBadge.offsetLeft;
+      const badgeWidth = activeBadge.offsetWidth;
+      const listWidth = list.clientWidth;
+      list.scrollTo({
+        left: badgeLeft - listWidth / 2 + badgeWidth / 2,
+        behavior: "smooth"
+      });
+    });
   }
 }
 
@@ -1122,45 +1233,61 @@ function renderChoices(question) {
     return;
   }
 
+  const isRevealed = Boolean(question.checked || state.reviewMode || state.peeking);
+
   question.choices.forEach((choice, index) => {
     const fragment = el.choiceTemplate.content.cloneNode(true);
-    const label = fragment.querySelector(".choice");
-    const input = fragment.querySelector("input");
-    const text = fragment.querySelector("span");
+    const label = fragment.querySelector(".choice-item");
+    const input = fragment.querySelector(".choice-native-input");
+    const text = fragment.querySelector(".choice-text");
+
     input.type = question.chooseCount > 1 ? "checkbox" : "radio";
+    input.name = `choice_${state.current}`;
     input.value = String(index);
-    input.checked = question.selected.includes(index);
+    const isSelected = question.selected.includes(index);
+    input.checked = isSelected;
     input.disabled = state.reviewMode || question.checked;
     text.textContent = choice.text;
 
-    input.addEventListener("change", () => {
-      if (input.type === "radio") {
-        question.selected = [index];
-        checkCurrent();
-      } else if (input.checked) {
-        question.selected = [...new Set([...question.selected, index])];
-        if (question.selected.length === question.chooseCount) {
-          checkCurrent();
-        } else {
-          render();
-        }
-      } else {
-        question.selected = question.selected.filter((selected) => selected !== index);
-        render();
-      }
-    });
+    label.setAttribute("data-index", String(index));
 
-    if (question.checked || state.reviewMode || state.peeking) {
-      const selected = question.selected.includes(index);
+    if (isSelected) {
+      label.classList.add("selected");
+    }
+
+    if (isRevealed) {
       if (choice.correct) {
-        label.classList.add(selected || state.reviewMode || state.peeking ? "correct" : "missed");
+        label.classList.add(isSelected || state.reviewMode || state.peeking ? "correct" : "missed");
       }
-      if (selected && !choice.correct && !state.peeking) {
+      if (isSelected && !choice.correct && !state.peeking) {
         label.classList.add("wrong");
       }
     }
 
+    input.addEventListener("change", () => {
+      if (question.checked || state.reviewMode) return;
+      if (input.type === "radio") {
+        question.selected = [index];
+      } else if (input.checked) {
+        question.selected = [...new Set([...question.selected, index])];
+      } else {
+        question.selected = question.selected.filter((s) => s !== index);
+      }
+      updateChoiceSelectionVisuals(question);
+    });
+
     el.choicesForm.append(fragment);
+  });
+}
+
+function updateChoiceSelectionVisuals(question) {
+  const items = el.choicesForm.querySelectorAll(".choice-item");
+  items.forEach((item) => {
+    const idx = Number(item.getAttribute("data-index"));
+    const isSelected = question.selected.includes(idx);
+    item.classList.toggle("selected", isSelected);
+    const input = item.querySelector(".choice-native-input");
+    if (input) input.checked = isSelected;
   });
 }
 
@@ -1366,21 +1493,13 @@ function assignSourceToTarget(question, sourceId, targetId) {
   question.userMatches[targetId] = sourceId;
   question.selectedSourceId = null;
 
-  const targetCount = question.matchingData?.targets?.length || 0;
-  const assignedCount = Object.keys(question.userMatches).length;
-
-  if (targetCount > 0 && assignedCount === targetCount) {
-    checkCurrent();
-  } else {
-    render();
-  }
+  renderMatching(question);
 }
 
 function renderExplanation(question) {
-  const shouldShow = state.reviewMode || question.checked || state.peeking;
-  el.explanationPanel.hidden = !shouldShow;
-  if (el.explanationPlaceholder) {
-    el.explanationPlaceholder.hidden = shouldShow;
+  const shouldShow = Boolean(state.reviewMode || question.checked || state.peeking);
+  if (el.explanationPanel) {
+    el.explanationPanel.hidden = !shouldShow;
   }
   if (!shouldShow) return;
 
@@ -1392,18 +1511,26 @@ function renderExplanation(question) {
       return `${t.text} → ${correctSourceNames.join(" OR ")}`;
     });
 
-    el.answerLine.textContent = pairs.length
-      ? `Matching Answer Key:\n• ${pairs.join("\n• ")}`
-      : "Answer key unavailable.";
-    el.explanationText.textContent = question.explanation || "No additional explanation detected.";
+    if (el.answerLine) {
+      el.answerLine.textContent = pairs.length
+        ? `Matching Answer Key:\n• ${pairs.join("\n• ")}`
+        : "Answer key unavailable.";
+    }
+    if (el.explanationText) {
+      el.explanationText.textContent = question.explanation || "No additional explanation detected.";
+    }
     return;
   }
 
   const correctAnswers = question.choices.filter((choice) => choice.correct).map((choice) => choice.text);
-  el.answerLine.textContent = correctAnswers.length
-    ? `Answer: ${correctAnswers.join(" | ")}`
-    : "Answer key was not detected for this question.";
-  el.explanationText.textContent = question.explanation || "No explanation was detected.";
+  if (el.answerLine) {
+    el.answerLine.textContent = correctAnswers.length
+      ? `Answer: ${correctAnswers.join(" | ")}`
+      : "Answer key was not detected for this question.";
+  }
+  if (el.explanationText) {
+    el.explanationText.textContent = question.explanation || "No explanation was detected.";
+  }
 }
 
 function checkCurrent() {
@@ -1582,13 +1709,14 @@ function setStatus(message, isError = false) {
 
 function initTheme() {
   const saved = localStorage.getItem("itexam-theme");
-  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  setTheme(saved || (prefersDark ? "dark" : "light"));
+  setTheme(saved || "dark");
 }
 
 function setTheme(theme) {
   const isDark = theme === "dark";
   document.documentElement.dataset.theme = isDark ? "dark" : "light";
-  el.themeToggle.checked = isDark;
+  if (el.themeToggle) el.themeToggle.checked = isDark;
+  const themeLabel = document.querySelector(".theme-toggle b");
+  if (themeLabel) themeLabel.textContent = isDark ? "Dark" : "Light";
   localStorage.setItem("itexam-theme", isDark ? "dark" : "light");
 }
